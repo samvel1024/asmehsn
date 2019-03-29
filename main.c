@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <assert.h>
+#include "meet.h"
 
 #define STACK_SIZE 1000000
 #define MAX_EURONS 100
@@ -17,12 +18,15 @@ typedef enum eur_err {
 } eur_err;
 
 typedef struct euron_t {
-  int stack_ptr;
+  int stack_size;
   char *code_ptr;
   int64_t stack[STACK_SIZE];
   pthread_t thread;
   int64_t result;
 } euron;
+
+euron eurons[MAX_EURONS];
+uint64_t euron_count;
 
 void eurassert(bool expr, eur_err err) {
   if (!expr) {
@@ -31,38 +35,20 @@ void eurassert(bool expr, eur_err err) {
   }
 }
 
-euron eurons[MAX_EURONS];
-uint64_t euron_count;
-
-volatile int64_t mc[MAX_EURONS][MAX_EURONS]; // meet count
-volatile int64_t mb[MAX_EURONS][MAX_EURONS]; // meet buffer
-
-
-int64_t exchange(int64_t fr, int64_t to, int64_t msg) {
-  eurassert(fr < euron_count && fr >= 0, illegal_meet_thread);
-  eurassert(to < euron_count && to >= 0, illegal_meet_thread);
-
-  mb[fr][to] = msg;
-  mc[fr][to]++;
-
-  while (mc[fr][to] != mc[to][fr]) {}
-
-  return mb[to][fr];
-}
 
 void push_stack(euron *eur, int64_t val) {
-//  eurassert(eur->stack_ptr < STACK_SIZE, stackoverflow);
-  eur->stack[eur->stack_ptr++] = val;
+  eurassert(eur->stack_size < STACK_SIZE, stackoverflow);
+  eur->stack[eur->stack_size++] = val;
 }
 
 int64_t pop_stack(euron *eur) {
-  eurassert(eur->stack_ptr > 0, empty_stack_pop);
-  return eur->stack[-1 + eur->stack_ptr--];
+  eurassert(eur->stack_size > 0, empty_stack_pop);
+  return eur->stack[--eur->stack_size];
 }
 
 int64_t peek_stack(euron *eur) {
-  eurassert(eur->stack_ptr > 0, empty_stack_pop);
-  return eur->stack[-1 + eur->stack_ptr];
+  eurassert(eur->stack_size > 0, empty_stack_pop);
+  return eur->stack[-1 + eur->stack_size];
 }
 
 uint64_t get_value(uint64_t n) {
@@ -75,13 +61,20 @@ void put_value(uint64_t n, uint64_t v) {
   assert(v == n + 4);
 }
 
+void print_stack(euron *e){
+  for(int i=0; i<e->stack_size; ++i){
+    printf("%lld ", e->stack[i]);
+  }
+  printf("\n");
+}
+
 void euron_loop(uint64_t euron_id, char *code) {
   euron *m = &eurons[euron_id];
-  m->stack_ptr = 0;
+  m->stack_size = 0;
   m->code_ptr = code;
   char curr;
   while ((curr = *m->code_ptr) != '\0') {
-    int64_t jmp = 1;
+    int64_t jmp = 0;
     switch (curr) {
       case '+': {
         push_stack(m, pop_stack(m) + pop_stack(m));
@@ -114,9 +107,10 @@ void euron_loop(uint64_t euron_id, char *code) {
         break;
       }
       case 'B': {
-        int64_t top = pop_stack(m);
-        if (top != 0) {
-          jmp = top;
+        int64_t j = pop_stack(m);
+        if (peek_stack(m) != 0) {
+          jmp = j;
+        }else {
         }
         break;
       }
@@ -151,7 +145,7 @@ void euron_loop(uint64_t euron_id, char *code) {
         eurassert(false, illegal_char);
       }
     }
-    m->code_ptr += jmp;
+    m->code_ptr += 1 + jmp;
   }
   m->result = peek_stack(m);
 }
