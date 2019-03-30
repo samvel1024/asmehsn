@@ -1,5 +1,6 @@
 %define N 3
 %define STACK_SIZE r12
+%define CURR_CHAR r14
 %macro case 2
     cmp bl, %1
     je %2
@@ -21,7 +22,6 @@
     inc STACK_SIZE
 %endmacro
 %macro stack_pop 1
-
     pop %1
     dec STACK_SIZE
 %endmacro
@@ -29,11 +29,11 @@
     push rbx
     push rdi
     push STACK_SIZE
-    push rsi
+    push CURR_CHAR
 
     call %1
 
-    pop rsi
+    pop CURR_CHAR
     pop STACK_SIZE
     pop rdi
     pop rbx
@@ -51,9 +51,10 @@ section .text
 ; uint64_t euron(uint64_t n, char const *prog);
 euron:
     push rdi                                ; Restore registers
-    push rsi
+    push CURR_CHAR
     push rbx
 
+    mov CURR_CHAR, rsi
     mov STACK_SIZE, 0
     jmp read_prog_condition
     read_prog:
@@ -107,7 +108,7 @@ euron:
     stack_pop rax
     cmp rax, 0
     je no_jump
-    add rsi, rbx
+    add CURR_CHAR, rbx
     no_jump:
     stack_push rax
     
@@ -143,8 +144,8 @@ euron:
 
     nop
     read_prog_condition:
-    mov bl, [rsi]
-    inc rsi
+    mov bl, [CURR_CHAR]
+    inc CURR_CHAR
     cmp bl, 0
     jne read_prog
 
@@ -158,6 +159,6 @@ euron:
     jg clean_stack
 
     pop rbx
-    pop rsi
+    pop CURR_CHAR
     pop rdi
     ret
