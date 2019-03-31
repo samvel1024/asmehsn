@@ -76,6 +76,7 @@ thread_meet:
     inc qword [meet + rbx * 8]
     pop rbx
     ret
+
 euron:
     push rdi                            ; Restore registers
     push CURR_CHAR
@@ -129,7 +130,6 @@ euron:
     ;***********************************;
     case_handler ident
     stack_push EURON_ID
-    
     ;***********************************;
     case_handler branch
     stack_pop rbx
@@ -139,7 +139,6 @@ euron:
     add CURR_CHAR, rbx
     no_jump:
     stack_push rax
-    
     ;***********************************;
     case_handler clean
     stack_pop rax

@@ -22,7 +22,7 @@ add_executable(meet_test3 meet_test3.c euron.asm euron_callbacks.c)
 add_executable(meet_test1_c meet_test1.c meet.c euron_callbacks.c)
 add_executable(meet_test2_c meet_test2.c meet.c euron_callbacks.c)
 add_executable(meet_test3_c meet_test3.c meet.c euron_callbacks.c)
-
+add_executable(testgen testgen.c)
 
 add_executable(asmimpl main.c euron.asm euron_callbacks.c)
 add_executable(cimpl main.c euron_cimpl.c meet.c euron_callbacks.c)

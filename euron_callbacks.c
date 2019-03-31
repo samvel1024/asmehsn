@@ -8,5 +8,4 @@ uint64_t get_value(uint64_t n) {
 
 
 void put_value(uint64_t n, uint64_t v) {
-  assert(v == n + 4);
 }

@@ -6,21 +6,22 @@
 #include "meet.h"
 #include "euron.h"
 #include "euron_callbacks.h"
-
-#define STACK_SIZE 1000000
+#include <string.h>
+#define STACK_SIZE 300000
 #define MAX_EURONS 100
 
 typedef enum eur_err {
   stackoverflow,
   empty_stack_pop,
   illegal_char,
+  illegal_jump,
   input_format_err,
   illegal_meet_thread
 } eur_err;
 
 typedef struct euron_t {
   int stack_size;
-  char *code_ptr;
+  int code_ptr;
   int64_t stack[STACK_SIZE];
   int64_t result;
 } euron_t;
@@ -29,8 +30,8 @@ euron_t eurons[MAX_EURONS];
 
 void eurassert(bool expr, eur_err err) {
   if (!expr) {
-    fprintf(stderr, "Error: %d\n", err);
-    exit(1);
+    fprintf(stdout, "Error: %d\n", err);
+    exit(err + 1);
   }
 }
 
@@ -49,7 +50,6 @@ int64_t peek_stack(euron_t *eur) {
   return eur->stack[-1 + eur->stack_size];
 }
 
-
 void print_stack(euron_t *e) {
   for (int i = 0; i < e->stack_size; ++i) {
     printf("%lld ", e->stack[i]);
@@ -60,9 +60,10 @@ void print_stack(euron_t *e) {
 uint64_t euron(uint64_t euron_id, char *code) {
   euron_t *m = &eurons[euron_id];
   m->stack_size = 0;
-  m->code_ptr = code;
   char curr;
-  while ((curr = *m->code_ptr) != '\0') {
+  int code_len = strlen(code);
+  m->code_ptr = 0;
+  while ((curr = code[m->code_ptr]) != '\0') {
     int64_t jmp = 0;
     switch (curr) {
       case '+': {
@@ -137,6 +138,7 @@ uint64_t euron(uint64_t euron_id, char *code) {
       }
     }
     m->code_ptr += 1 + jmp;
+    eurassert(m->code_ptr < code_len && m->code_ptr >= 0, illegal_jump);
   }
   m->result = peek_stack(m);
   return m->result;
