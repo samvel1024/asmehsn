@@ -1,11 +1,12 @@
-%define N 3
+%define N 2
+%define EURON_ID r13
 %define STACK_SIZE r12
 %define CURR_CHAR r14
-%macro case 2
+%macro case 2                           ; Switch case declaration macro
     cmp bl, %1
     je %2
 %endmacro
-%macro case_range 3
+%macro case_range 3                     ; Switch case for range of values like 0..9
     cmp bl, %1
     jl %%fail
     cmp bl, %2
@@ -13,11 +14,11 @@
     jmp %3
     %%fail:
 %endmacro
-%macro case_handler 1
+%macro case_handler 1                   ; Case body declaration
     jmp read_prog_condition
     %1:
 %endmacro
-%macro stack_push 1
+%macro stack_push 1                     ; Push/Pop to euron stack with counting the size
     push %1
     inc STACK_SIZE
 %endmacro
@@ -25,7 +26,7 @@
     pop %1
     dec STACK_SIZE
 %endmacro
-%macro save_call 1
+%macro save_call 1                      ; Call a function with saving all used registers
     push rbx
     push rdi
     push STACK_SIZE
@@ -40,20 +41,64 @@
 %endmacro
 
 
-global euron
+global euron, thread_meet
 
 extern get_value, put_value
 
+section .bss
+    meet resq N*N
+    buff resq N
 
 section .text
 
 
+%macro index 3
+    xor %1, %1
+    mov %1, N
+    imul %1, %2
+    add %1, %3
+%endmacro
+
+
+thread_meet:
+    ;rdi, rsi, rdx
+    spin1:
+    index rax, rdi, rsi
+    index rbx, rsi, rdi
+    mov rax, [meet + rax * 8]
+    mov rbx, [meet + rbx * 8]
+    cmp rax, rbx
+    ja spin1
+
+    mov qword [buff + rdi * 8], rdx
+    index rax, rdi, rsi
+    inc qword [meet + rax * 8]
+
+    spin2:
+    index rax, rdi, rsi
+    index rbx, rsi, rdi
+    mov rax, [meet + rax * 8]
+    mov rbx, [meet + rbx * 8]
+    cmp rax, rbx
+    ja spin2
+
+    done_spin:
+    xor rax, rax
+    mov rax, qword [buff + rsi * 8]
+    index rbx, rdi, rsi
+    inc qword [meet + rbx * 8]
+    ret
+
+
+
+
 ; uint64_t euron(uint64_t n, char const *prog);
 euron:
-    push rdi                                ; Restore registers
+    push rdi                            ; Restore registers
     push CURR_CHAR
     push rbx
 
+    mov EURON_ID, rdi
     mov CURR_CHAR, rsi
     mov STACK_SIZE, 0
     jmp read_prog_condition
@@ -100,7 +145,7 @@ euron:
     
     ;***********************************;
     case_handler ident
-    stack_push rdi
+    stack_push EURON_ID
     
     ;***********************************;
     case_handler branch
@@ -141,6 +186,12 @@ euron:
 
     ;***********************************;
     case_handler synch
+    mov rdi, EURON_ID               ; fr = rdi
+    stack_pop rsi                   ; to = rsi
+    stack_pop rdx
+    call thread_meet
+    stack_push rax
+
 
     nop
     read_prog_condition:

@@ -129,7 +129,7 @@ uint64_t euron(uint64_t euron_id, char *code) {
       case 'S': {
         uint64_t to = pop_stack(m);
         uint64_t msg = pop_stack(m);
-        push_stack(m, exchange(euron_id, to, msg));
+        push_stack(m, thread_meet(euron_id, to, msg));
         break;
       }
       default: {

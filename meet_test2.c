@@ -17,17 +17,17 @@ void thread_run(struct thread *args) {
   int id = args->id;
   args->before = 0;
   if (id > 0 && id < THREAD_COUNT - 1) {
-    args->before = exchange(id, id - 1, 0) + args->id;
-    exchange(id, id + 1, args->before);
-    args->ans = exchange(id, id + 1, 0);
-    exchange(id, id-1, args->ans);
+    args->before = thread_meet(id, id - 1, 0) + args->id;
+    thread_meet(id, id + 1, args->before);
+    args->ans = thread_meet(id, id + 1, 0);
+    thread_meet(id, id - 1, args->ans);
   } else if (id == 0){
-    exchange(id, id + 1, args->before);
-    args->ans = exchange(id, id+1, 0);
+    thread_meet(id, id + 1, args->before);
+    args->ans = thread_meet(id, id + 1, 0);
   } else if (id == THREAD_COUNT - 1){
-    args->before = args->id + exchange(id, id-1, 0);
+    args->before = args->id + thread_meet(id, id - 1, 0);
     args->ans = args->before;
-    exchange(id, id-1, args->before);
+    thread_meet(id, id - 1, args->before);
   }
 }
 

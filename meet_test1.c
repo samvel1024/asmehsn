@@ -16,7 +16,7 @@ void thread_run(struct thread *args) {
   int mid = args->id;
   int to = mid % 2 == 0 ? mid + 1 : mid - 1;
   for(int i=0; i<MEET_COUNT; ++i) {
-    int64_t ex = exchange(mid, to, i);
+    int64_t ex = thread_meet(mid, to, i);
     if (ex != i) {
       fprintf(stderr, "ERROR id=%d, got=%lld, exp=%d\n",mid, ex, i);
       exit(1);

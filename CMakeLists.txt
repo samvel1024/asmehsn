@@ -9,16 +9,20 @@ if(CMAKE_ASM_NASM_COMPILER_LOADED)
     set(ENGINE_SOURCES ${ENGINE_SOURCES} ${ENGINE_ASM_FILES})
 endif(CMAKE_ASM_NASM_COMPILER_LOADED)
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_FLAGS "-g")
+set(CMAKE_C_FLAGS "-g -pthread")
 set(CMAKE_ASM_NASM_FLAGS "-g -DN=$ENV{THREAD_N}")
 
-add_executable(meet_test1 meet_test1.c meet.h)
-add_executable(meet_test2 meet_test2.c meet.h)
-add_executable(meet_test3 meet_test3.c meet.h)
+
+
+
+add_executable(meet_test1 meet_test1.c euron.asm euron_callbacks.c)
+add_executable(meet_test2 meet_test2.c euron.asm euron_callbacks.c)
+add_executable(meet_test3 meet_test3.c euron.asm euron_callbacks.c)
+
+add_executable(meet_test1_c meet_test1.c meet.c euron_callbacks.c)
+add_executable(meet_test2_c meet_test2.c meet.c euron_callbacks.c)
+add_executable(meet_test3_c meet_test3.c meet.c euron_callbacks.c)
+
+
 add_executable(asmimpl main.c euron.asm euron_callbacks.c)
-add_executable(cimpl main.c euron_cimpl.c meet.h euron_callbacks.c)
-target_link_libraries(meet_test1 pthread)
-target_link_libraries(meet_test2 pthread)
-target_link_libraries(meet_test3 pthread)
-target_link_libraries(cimpl pthread)
-target_link_libraries(asmimpl pthread)
+add_executable(cimpl main.c euron_cimpl.c meet.c euron_callbacks.c)

@@ -23,12 +23,12 @@ void thread_run(struct thread *args) {
     for (int __j = 0; __j < PING_COUNT; ++__j) {
       if (receiver == id) {
         for (int th = 0; th < THREAD_COUNT; ++th) {
-          int val = exchange(id, th, id);
+          int val = thread_meet(id, th, id);
           assert(val == th);
           ctr[val]++;
         }
       } else {
-        int rcv = exchange(id, receiver, id);
+        int rcv = thread_meet(id, receiver, id);
         assert(rcv == receiver);
       }
     }
