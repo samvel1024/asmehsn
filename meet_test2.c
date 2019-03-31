@@ -49,6 +49,5 @@ int main(int argc, char **argv) {
     long before = (i*i + i)/2;
     long ans = (THREAD_COUNT * THREAD_COUNT + THREAD_COUNT)/2 - THREAD_COUNT;
     assert(before == th[i].before && ans == th[i].ans);
-    printf("Thread %d: before=%lld, ans=%lld\n", i, th[i].before, th[i].ans);
   }
 }

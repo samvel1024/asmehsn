@@ -1,4 +1,4 @@
-%define N 2
+%define N 1000
 %define EURON_ID r13
 %define STACK_SIZE r12
 %define CURR_CHAR r14
@@ -39,10 +39,23 @@
     pop rdi
     pop rbx
 %endmacro
-
+%macro index 3
+    xor %1, %1
+    mov %1, N
+    imul %1, %2
+    add %1, %3
+%endmacro
+%macro spinlock 0
+     %%spin:
+    index rax, rdi, rsi
+    index rbx, rsi, rdi
+    mov rax, [meet + rax * 8]
+    mov rbx, [meet + rbx * 8]
+    cmp rax, rbx
+    ja %%spin
+%endmacro
 
 global euron, thread_meet
-
 extern get_value, put_value
 
 section .bss
@@ -50,49 +63,19 @@ section .bss
     buff resq N
 
 section .text
-
-
-%macro index 3
-    xor %1, %1
-    mov %1, N
-    imul %1, %2
-    add %1, %3
-%endmacro
-
-
 thread_meet:
-    ;rdi, rsi, rdx
-    spin1:
-    index rax, rdi, rsi
-    index rbx, rsi, rdi
-    mov rax, [meet + rax * 8]
-    mov rbx, [meet + rbx * 8]
-    cmp rax, rbx
-    ja spin1
-
+    push rbx
+    spinlock
     mov qword [buff + rdi * 8], rdx
     index rax, rdi, rsi
     inc qword [meet + rax * 8]
-
-    spin2:
-    index rax, rdi, rsi
-    index rbx, rsi, rdi
-    mov rax, [meet + rax * 8]
-    mov rbx, [meet + rbx * 8]
-    cmp rax, rbx
-    ja spin2
-
-    done_spin:
-    xor rax, rax
+    spinlock
     mov rax, qword [buff + rsi * 8]
+    post_read:
     index rbx, rdi, rsi
     inc qword [meet + rbx * 8]
+    pop rbx
     ret
-
-
-
-
-; uint64_t euron(uint64_t n, char const *prog);
 euron:
     push rdi                            ; Restore registers
     push CURR_CHAR
