@@ -138,7 +138,7 @@ uint64_t euron(uint64_t euron_id, char *code) {
       }
     }
     m->code_ptr += 1 + jmp;
-    eurassert(m->code_ptr < code_len && m->code_ptr >= 0, illegal_jump);
+    eurassert(m->code_ptr <= code_len && m->code_ptr >= 0, illegal_jump);
   }
   m->result = peek_stack(m);
   return m->result;

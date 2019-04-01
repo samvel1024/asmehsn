@@ -1,4 +1,3 @@
-%define N 1000
 %define EURON_ID r13
 %define STACK_SIZE r12
 %define CURR_CHAR r14
@@ -26,26 +25,14 @@
     pop %1
     dec STACK_SIZE
 %endmacro
-%macro save_call 1                      ; Call a function with saving all used registers
-    push rbx
-    push rdi
-    push STACK_SIZE
-    push CURR_CHAR
-
-    call %1
-
-    pop CURR_CHAR
-    pop STACK_SIZE
-    pop rdi
-    pop rbx
-%endmacro
-%macro index 3
+%macro index 3                          ; Get the relative address of [%2][%3] index in the matrix
     xor %1, %1
     mov %1, N
     imul %1, %2
     add %1, %3
 %endmacro
-%macro spinlock 0
+%macro spinlock 0                       ;  while (meet[fr][to] > meet[to][fr]) {}
+
      %%spin:
     index rax, rdi, rsi
     index rbx, rsi, rdi
@@ -54,7 +41,29 @@
     cmp rax, rbx
     ja %%spin
 %endmacro
-
+%macro save 0                           ; Save and load all the used registers
+    push r12
+    push r13
+    push r14
+    push rbx
+    push rdi
+    push rsi
+    push rdx
+%endmacro
+%macro load 0
+    pop rdx
+    pop rsi
+    pop rdi
+    pop rbx
+    pop r14
+    pop r13
+    pop r12
+%endmacro
+%macro save_call 1                      ; Call a function with saving all used registers
+    save
+    call %1
+    load
+%endmacro
 global euron, thread_meet
 extern get_value, put_value
 
@@ -65,22 +74,21 @@ section .bss
 section .text
 thread_meet:
     push rbx
-    spinlock
-    mov qword [buff + rdi * 8], rdx
+    spinlock                            ; while (meet[fr][to] > meet[to][fr]) {}
+
+    mov qword [buff + rdi * 8], rdx     ; buff[fr] = msg;
     index rax, rdi, rsi
-    inc qword [meet + rax * 8]
-    spinlock
-    mov rax, qword [buff + rsi * 8]
-    post_read:
+    inc qword [meet + rax * 8]          ; meet[fr][to]++;
+    spinlock                            ; while (meet[fr][to] > meet[to][fr]) {}
+
+    mov rax, qword [buff + rsi * 8]     ; int64_t ans = buff[to];
     index rbx, rdi, rsi
-    inc qword [meet + rbx * 8]
+    inc qword [meet + rbx * 8]          ; meet[fr][to]++;
     pop rbx
-    ret
+    ret                                 ; return ans
 
 euron:
-    push rdi                            ; Restore registers
-    push CURR_CHAR
-    push rbx
+    save
 
     mov EURON_ID, rdi
     mov CURR_CHAR, rsi
@@ -163,6 +171,7 @@ euron:
     
     ;***********************************;
     case_handler popstack
+    mov rdi, EURON_ID
     stack_pop rsi
     save_call put_value
 
@@ -184,14 +193,12 @@ euron:
 
     stack_pop rax
 
-    jmp clean_stack_condition
+    jmp clean_stack_condition               ; Clean the stack that was left after euron operations
     clean_stack:
     stack_pop rbx
     clean_stack_condition:
     cmp STACK_SIZE, 0
     jg clean_stack
 
-    pop rbx
-    pop CURR_CHAR
-    pop rdi
+    load
     ret

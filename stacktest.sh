@@ -11,6 +11,6 @@ do
             echo "ERROR!!!!"
             exit 1
         fi
-
+        echo -ne "Passed: $var \033[0K\r"
     fi
 done

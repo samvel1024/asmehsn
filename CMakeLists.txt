@@ -26,3 +26,6 @@ add_executable(testgen testgen.c)
 
 add_executable(asmimpl main.c euron.asm euron_callbacks.c)
 add_executable(cimpl main.c euron_cimpl.c meet.c euron_callbacks.c)
+
+configure_file(locktest.sh locktest.sh COPYONLY)
+configure_file(stacktest.sh stacktest.sh COPYONLY)
